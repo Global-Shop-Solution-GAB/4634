@@ -1,0 +1,174 @@
+Program.Sub.ScreenSU.Start
+Gui.fSchedJobs..Create
+Gui.fSchedJobs..Caption("Scheduled Jobs Report")
+Gui.fSchedJobs..Size(5715,3735)
+Gui.fSchedJobs..MinX(0)
+Gui.fSchedJobs..MinY(0)
+Gui.fSchedJobs..Position(0,0)
+Gui.fSchedJobs..BackColor(-2147483633)
+Gui.fSchedJobs..MousePointer(0)
+Gui.fSchedJobs..Event(UnLoad,fSchedJobs_UnLoad)
+Gui.fSchedJobs..MaxButton(False)
+Gui.fSchedJobs..Sizeable(False)
+Gui.fSchedJobs.dtpSelDate.Create(DatePicker)
+Gui.fSchedJobs.dtpSelDate.Size(2085,285)
+Gui.fSchedJobs.dtpSelDate.Position(285,720)
+Gui.fSchedJobs.dtpSelDate.TabStop(True)
+Gui.fSchedJobs.dtpSelDate.TabIndex(1)
+Gui.fSchedJobs.lbl1.Create(Label,"Select Date:",True,1935,255,0,285,330,True,0,"Arial",10,-2147483633,0)
+Gui.fSchedJobs.lvwWCs.Create(ListView)
+Gui.fSchedJobs.lvwWCs.Size(2505,2670)
+Gui.fSchedJobs.lvwWCs.Position(2670,270)
+Gui.fSchedJobs.lvwWCs.TabStop(True)
+Gui.fSchedJobs.lvwWCs.TabIndex(2)
+Gui.fSchedJobs.lvwWCs.View(3)
+Gui.fSchedJobs.lvwWCs.addlistviewcolumn("Work Centers",2000,0)
+Gui.fSchedJobs.cmdGenRep.Create(Button)
+Gui.fSchedJobs.cmdGenRep.Size(2130,720)
+Gui.fSchedJobs.cmdGenRep.Position(285,2220)
+Gui.fSchedJobs.cmdGenRep.TabStop(True)
+Gui.fSchedJobs.cmdGenRep.TabIndex(3)
+Gui.fSchedJobs.cmdGenRep.Caption("Generate Report")
+Gui.fSchedJobs.cmdGenRep.FontSize(10)
+Gui.fSchedJobs.cmdGenRep.Event(Click,cmdGenRep_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+v.Local.sSQL.Declare(String)
+F.ODBC.Connection!conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+Gui.fSchedJobs.lvwWCs.ClearItems
+
+F.ODBC.Connection!conx.OpenRecordsetRO("rst","Select distinct WC_DEPT from workcenters")
+F.Intrinsic.Control.DoUntil(V.ODBC.conx!rst.EOF,=,True)
+	Gui.fSchedJobs.lvwWCs.AddListItem(V.ODBC.conx!rst.FieldVal!WC_DEPT,V.ODBC.conx!rst.FieldVal!WC_DEPT)
+
+	F.ODBC.conx!rst.MoveNext
+F.Intrinsic.Control.Loop
+
+F.ODBC.conx!rst.Close
+gui.fSchedJobs..Show
+
+
+Program.Sub.Main.End
+
+Program.Sub.cmdGenRep_Click.Start
+v.Local.sContent.Declare(String)
+v.Local.dDate.Declare(date)
+v.Local.sSQL.Declare(String)
+v.Local.sMAP.Declare(String)
+v.Local.sMsg.Declare(String)
+v.Local.sParamvals.Declare(String)
+v.Local.sListVw.Declare(String)
+v.Local.iCount.Declare(Long)
+v.Local.iCount1.Declare(Long)
+v.Local.iCount2.Declare(Long)
+v.Local.icount3.Declare(Long)
+v.Local.sFrmJS.Declare(String)
+v.Local.sToJS.Declare(String)
+v.Local.iRunID.Declare(string)
+v.Local.iLogID.Declare(string)
+v.Local.sMSEQDET.Declare(string)
+'gui.fSchedJobs..Enabled(False)
+Gui.fSchedJobs..Visible(False)
+f.Intrinsic.String.Build("delete from GCG_4634_JOBSCHED where TERMINAL = '{0}'",v.Caller.Terminal,v.Local.sSQL)
+
+f.ODBC.Connection!conx.execute(v.Local.sSQL)
+
+gui.fSchedJobs.lvwWCs.RetrieveSelectedListitems(v.Local.sListVw)
+f.Intrinsic.Control.If(v.Local.sListVw,=,"***NORETURN***")
+	f.Intrinsic.UI.Msgbox("No Work Center was selected.")
+	gui.fSchedJobs..Enabled(True)
+	f.Intrinsic.Control.ExitSub
+f.Intrinsic.Control.EndIf
+
+v.Local.dDate.Set(v.screen.fSchedJobs!dtpSelDate.Value)
+Function.Intrinsic.UI.InvokeWaitDialog( "Compiling data","Running PreProc" )
+f.Intrinsic.String.Build("select RTRIM(' ') as BIRUNID,RTRIM(' ') as TERMINAL,Job,SFX,JS,Right(JSS,6)as SEQ,SAR,ROG as DEPT,RTRIM(' ') as FGPART,RTRIM(' ') as CUSTOMER,RTRIM(' ') as NAME_CUSTOMER,BTM,ETM,BDATE,RTRIM(' ') as MSEQ, RTRIM(' ') as Mat, RTRIM(' ') as MatDesc from APSV3_UBDETAIL a where ROG = '{0}' and BDate = '{1}' and job not like 'X%' order by SAR,BTM",v.Local.sListVw,v.Local.dDate.PervasiveDate,v.Local.sSQL)
+f.Data.DataTable.CreateFromSQL("BIDT","conx",v.Local.sSQL)
+
+f.Data.DataTable.CreateFromSQL("TempDT","conx","Select distinct Job + suffix as JS,Part,customer from V_JOB_HEADER")
+
+F.Data.Dictionary.CreateFromDataTable("FGPARTDICT","TempDT","JS","PART")
+F.Data.Dictionary.SetDefaultReturn("FGPARTDICT","")
+
+F.Data.Dictionary.CreateFromDataTable("CustDict","TempDT","JS","customer")
+F.Data.Dictionary.SetDefaultReturn("CustDict","")
+
+f.Data.DataTable.FillFromDictionary("BIDT","FGPARTDICT","JS","FGPART")
+f.Data.DataTable.FillFromDictionary("BIDT","CustDict","JS","CUSTOMER")
+
+f.Data.DataTable.Close("TempDT")
+f.Data.Dictionary.Close("FGPARTDICT")
+f.Data.Dictionary.Close("CustDict")
+
+
+f.Data.Dictionary.CreateFromSQL("CustDict","conx","Select customer, NAME_CUSTOMER from V_CUSTOMER_MASTER")
+F.Data.Dictionary.SetDefaultReturn("CustDict","")
+f.Data.DataTable.FillFromDictionary("BIDT","CustDict","CUSTOMER","NAME_CUSTOMER")
+f.Data.Dictionary.Close("CustDict")
+
+f.Intrinsic.Control.If(v.DataTable.BIDT.RowCount,=,0)
+	
+	f.Data.DataTable.Close("BIDT")
+	f.Intrinsic.String.Build("No Jobs have been scheduled at the work center '{0}' for the date - {1}",v.Local.sListVw,v.Local.dDate.String,v.Local.sMsg)
+	f.Intrinsic.UI.Msgbox(v.Local.sMsg)
+	Function.Intrinsic.UI.CloseWaitDialog
+	gui.fSchedJobs..Enabled(True)
+	f.Intrinsic.Control.ExitSub
+f.Intrinsic.Control.EndIf
+
+f.Intrinsic.Control.For(v.Local.iCount,0,v.DataTable.BIDT.RowCount--,1)
+	f.Intrinsic.String.Build("Select top 1 seq,part,description from v_job_operations where job = '{0}' and suffix = '{1}' and seq < '{2}' and LMO = 'M' order by seq desc",v.DataTable.BIDT(v.Local.icount).job!fieldVal,v.DataTable.BIDT(v.Local.icount).sfx!fieldVal,v.DataTable.BIDT(v.Local.icount).Seq!fieldVal,v.Local.sSQL)
+	f.ODBC.Connection!conx.executeandreturn(v.Local.sSQL,v.Local.sMSEQDET)
+	f.Intrinsic.String.Split(v.Local.sMSEQDET,"*!*",v.Local.sMSEQDET)
+	f.Data.DataTable.SetValue("BIDT",v.Local.iCount,"MSEQ",v.Local.sMSEQDET(0))
+	f.Data.DataTable.SetValue("BIDT",v.Local.iCount,"Mat",v.Local.sMSEQDET(1))
+	f.Data.DataTable.SetValue("BIDT",v.Local.iCount,"MatDesc",v.Local.sMSEQDET(2))
+
+	v.Local.sMSEQDET.Redim(0,0)
+f.Intrinsic.Control.Next(v.Local.iCount)
+'Function.Intrinsic.Debug.InvokeDebugger
+
+'Function.Intrinsic.Debug.Stop
+
+
+F.Global.BI.GetRunID(v.Local.iRunID)
+F.Global.BI.StartLogging(v.Local.iRunID, -1, -1, "Job Schedule Report", v.Local.iLogID)
+
+f.Data.DataTable.SetValue("BIDT",-1,"BIRUNID",v.Local.iRunID)
+f.Data.DataTable.SetValue("BIDT",-1,"TERMINAL",v.Caller.Terminal)
+
+
+v.Local.sMap.Set("BIRUNID@!@BIRUNID*!*TERMINAL@!@TERMINAL*!*JOB@!@JOB*!*SFX@!@SFX*!*SEQ@!@SEQ*!*SAR@!@SAR*!*DEPT@!@DEPT*!*FGPART@!@FGPART*!*CUSTOMER@!@CUSTOMER*!*NAME_CUSTOMER@!@NAME_CUSTOMER*!*BTM@!@BTM*!*ETM@!@ETM*!*BDATE@!@BDATE*!*MSEQ@!@MSEQ*!*Mat@!@Mat*!*MatDesc@!@MatDesc")
+F.data.DataTable.SaveToDB("BIDT","conx","GCG_4634_JOBSCHED","BIRUNID*!*TERMINAL",128,V.Local.sMap)
+f.data.datatable.Close("BIDT")
+
+Function.Intrinsic.UI.CloseWaitDialog
+Function.Intrinsic.UI.InvokeWaitDialog( "Saving to DB","Running PreProc" )
+
+
+F.Global.BI.StopLogging(v.Local.iLogID)
+
+f.Intrinsic.String.Build("{0}*!*{1}",v.Local.iRunID,v.Caller.Terminal,v.Local.sParamVals)
+
+Function.Intrinsic.UI.CloseWaitDialog
+
+Function.Intrinsic.UI.InvokeWaitDialog( "Generating Report","Running PreProc")
+'F.Intrinsic.UI.Msgbox(v.Local.iRunID)
+'F.Global.BI.RunReportPreProcessor(v.Local.iRunID, v.Local.iLogID, "BIRunID*!*Terminal", v.Local.sParamVals, "", 16, true, "", -1, "", -1, "","", v.Local.iLogID)
+F.Global.BI.RunReportPreProcessor(V.Local.iRunID,V.Local.iLogID,"BIRUNID*!*TERMINAL",V.Local.sParamvals,"",-1,True,"",-1,"",-1,"","",V.Local.iLogID)
+
+Function.Intrinsic.UI.CloseWaitDialog
+'gui.fSchedJobs..Enabled(True)
+f.intrinsic.Control.CallSub(fSchedJobs_UnLoad)
+
+
+Program.Sub.cmdGenRep_Click.End
+
+Program.Sub.fSchedJobs_UnLoad.Start
+F.ODBC.Connection!conx.Close
+F.Intrinsic.Control.End
+Program.Sub.fSchedJobs_UnLoad.End
