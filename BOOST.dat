@@ -1,0 +1,27 @@
+**************************************************************
+* This file contains the login credentials needed for the    *
+* Ncell integration GAB scripts.                             *
+*                                                            *
+* The format CREDENTAIL TYPE::VALUE must be maintained,      *
+* for the values to be recognized.                           *
+*                                                            *
+* The credental values are assumed to be case sensitive and  *
+* will be applied as provided in this file.                  *
+*                                                            *
+* GCG_SN_Quote_Import.gas, will connect directly to the SN   *
+* data tables.  Values will be credentials required to access*
+* SN data tables                                             *
+* PROVIDER, SERVER, UID, PWD                                 *
+*                                                            *
+* ATG_TO_NCELL_FILE.gas, will send open wo requirements.     *
+* Values will be the file path, where GSS                    *
+* will write the input files, for Ncell to read.             *
+* INPUT                                                      *
+*                                                            *
+* ATG_JONES_NCELL.gas, will read feedback files, for         *
+* labor and material usage.  Values will be file path, where *
+* Ncll will write the files, for GSS to read.                *
+* COMPLETE                                                   *
+**************************************************************
+INPUT::\\GlobalShop\Apps\Global\BOOST\TO_BOOST
+COMPLETE::\\GlobalShop\Apps\Global\BOOST\FROM_BOOST
