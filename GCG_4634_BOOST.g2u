@@ -1,0 +1,691 @@
+Program.Sub.ScreenSU.Start
+Gui.fXp2Boost..Create
+Gui.fXp2Boost..Caption("Export to Boost")
+Gui.fXp2Boost..Size(5775,2250)
+Gui.fXp2Boost..MinX(0)
+Gui.fXp2Boost..MinY(0)
+Gui.fXp2Boost..Position(0,0)
+Gui.fXp2Boost..BackColor(-2147483633)
+Gui.fXp2Boost..MousePointer(0)
+Gui.fXp2Boost..Event(UnLoad,Unload)
+Gui.fXp2Boost.frameParent.Create(Frame)
+Gui.fXp2Boost.frameParent.Size(5355,1500)
+Gui.fXp2Boost.frameParent.Position(90,105)
+Gui.fXp2Boost.optByDate.Create(Option)
+Gui.fXp2Boost.optByDate.Size(2160,255)
+Gui.fXp2Boost.optByDate.Position(150,210)
+Gui.fXp2Boost.optByDate.Parent("frameParent")
+Gui.fXp2Boost.optByDate.Caption("Export by Cutoff Date")
+Gui.fXp2Boost.optByDate.Event(Click,optByDate_Click)
+Gui.fXp2Boost.optByWO.Create(Option)
+Gui.fXp2Boost.optByWO.Size(2280,255)
+Gui.fXp2Boost.optByWO.Position(2730,195)
+Gui.fXp2Boost.optByWO.Parent("frameParent")
+Gui.fXp2Boost.optByWO.Caption("Export by Individual WO")
+Gui.fXp2Boost.optByWO.Event(Click,optByWO_Click)
+Gui.fXp2Boost.dtpCutOff.Create(DatePicker)
+Gui.fXp2Boost.dtpCutOff.Size(1935,285)
+Gui.fXp2Boost.dtpCutOff.Position(150,600)
+Gui.fXp2Boost.dtpCutOff.Parent("frameParent")
+Gui.fXp2Boost.txtWO.Create(TextBox,"",False,1935,300,0,150,600,True,0,"Arial",8,-2147483643,1)
+Gui.fXp2Boost.txtWO.Parent("frameParent")
+Gui.fXp2Boost.txtWO.Locked(True)
+Gui.fXp2Boost.cmdBrWO.Create(Button)
+Gui.fXp2Boost.cmdBrWO.Visible(False)
+Gui.fXp2Boost.cmdBrWO.Size(390,315)
+Gui.fXp2Boost.cmdBrWO.Position(2220,585)
+Gui.fXp2Boost.cmdBrWO.Parent("frameParent")
+Gui.fXp2Boost.cmdBrWO.Event(Click,cmdBrWO_Click)
+Gui.fXp2Boost.cmdRunXp.Create(Button)
+Gui.fXp2Boost.cmdRunXp.Size(1260,375)
+Gui.fXp2Boost.cmdRunXp.Position(150,1035)
+Gui.fXp2Boost.cmdRunXp.Caption("Run")
+Gui.fXp2Boost.cmdRunXp.Event(Click,cmdRunXp_Click)
+Gui.fXp2Boost.cmdRunXp.Parent("frameParent")
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+v.global.sXPType.Declare
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+V.Local.dDate.Declare(date)
+
+
+f.ODBC.Connection!Conx.OpenConnection(v.Ambient.PDSN,v.Ambient.PUser,v.Ambient.PPass)
+F.Intrinsic.Date.DateAdd("D",5,V.Ambient.Date,V.Local.dDate)
+gui.fXp2Boost.dtpCutOff.Value(V.Local.dDate)
+
+gui.fXp2Boost.optByDate.Value(1)
+gui.fXp2Boost.dtpCutOff.Visible(True)
+gui.fXp2Boost.dtpCutOff.Enabled(True)
+gui.fXp2Boost.txtWO.Visible(False)
+gui.fXp2Boost.txtWO.Enabled(False)
+gui.fXp2Boost.cmdBrWO.Visible(False)
+gui.fXp2Boost.cmdBrWO.Enabled(False)
+v.global.sXPType.Set("D")
+
+gui.fXp2Boost..SetFocus
+gui.fXp2Boost..Show
+
+
+Program.Sub.Main.End
+
+Program.Sub.cmdRunXp_Click.Start
+v.Local.sSql.Declare(String)
+v.Local.iCount.Declare(long)
+v.Local.fUnits.Declare(Float)
+v.Local.sFilter.Declare(String)
+V.Local.sGMT.Declare(String)
+V.Local.sHold.Declare(String)
+V.Local.sRev.Declare(String)
+V.Local.sCADRet.Declare(String)
+V.Local.sComment.Declare(String)
+V.Local.sCustNo.Declare(String)
+V.Local.sCustom.Declare(String)
+V.Local.sCustName.Declare(String)
+V.Local.sComments.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.sFileCad.Declare(String)
+V.Local.sCADFileName.Declare(String)
+V.Local.sDrawing.Declare(String)
+V.Local.sDateHold.Declare(String)
+V.Local.dDate.Declare(date)
+v.Local.bExists.Declare(boolean)
+v.Local.sDesc.Declare(string)
+v.Local.sActDesc.Declare(string)
+v.Local.sPartID.Declare(string)
+v.Local.sPriority.Declare(string)
+v.Local.sSuffix.Declare(string)
+v.Local.sJob.Declare(string)
+v.Local.sSeq.Declare(string)
+v.Local.sWO.Declare(string)
+v.Local.sOutFile.Declare(string)
+v.Local.sCount.Declare(string)
+v.Local.sDueDate.Declare(string)
+v.Local.bCheck.Declare(Boolean)
+v.Local.dDate.Set(v.Screen.fXp2Boost!dtpCutOff.Value)
+v.Local.sMSEQDET.Declare(string)
+v.Local.sPartNoRev.Declare
+v.Local.sWOW.Declare
+v.Local.sJobW.Declare
+v.Local.sSuffixW.Declare
+v.Local.sSeqW.Declare
+
+'F.Intrinsic.String.Build("Select distinct SAR as PART,JS,JOB,SFX as SUFFIX,Right(Concat('000000',SEQ),6) as SEQ,RTRIM(' ') as PART_ID from APSV3_UBDetail where SAR in (select Machine from Workcenters where Nesting_Intrfc = 'Y') ")
+'f.Intrinsic.String.Build("{0} : Info! running SQL query - {1}",v.Ambient.Now, v.Local.sSel, v.Local.sLog)
+'f.Intrinsic.File.Append2Filenewline(v.Global.sLogName,v.Local.sLog)
+'F.data.DataTable.CreateFromSQL("UBDet","conx","Select distinct SAR as PART,UNITS,JS,JOB,SFX as SUFFIX,Right(Concat('000000',SEQ),6) as SEQ,RTRIM(' ') as PART_ID from APSV3_UBDetail where SAR in (select Machine from Workcenters where Nesting_Intrfc = 'Y') ")
+gui.fXp2Boost..Enabled(False)
+f.intrinsic.UI.InvokeWaitDialog("Compiling Data","Export 2 XML for BOOST")
+'f.Intrinsic.String.Build("SELECT JOB, SUFFIX, SEQ,JOB + SUFFIX as JS, JOB + SUFFIX + SEQ AS JSS,RTRIM(' ') as PART, (SELECT TOP 1 HOURS_ESTIMATED FROM V_JOB_OPERATIONS  WHERE LMO = 'M' AND JOB = A.JOB AND SUFFIX = A.SUFFIX AND SEQ < A.SEQ ) AS UNITS, (SELECT TOP 1 PART FROM V_JOB_OPERATIONS WHERE LMO = 'M' AND JOB = A.JOB AND SUFFIX = A.SUFFIX AND SEQ < A.SEQ ) AS PART_ID,(SELECT TOP 1 DESCRIPTION FROM V_JOB_OPERATIONS WHERE JOB = A.JOB AND SUFFIX = A.SUFFIX AND LMO = 'C' AND SEQ > A.SEQ AND SEQ < ISNULL((SELECT TOP 1 SEQ FROM V_JOB_OPERATIONS WHERE JOB = A.JOB AND SUFFIX = A.SUFFIX AND SEQ > A.SEQ AND SEQ < '995000' AND LMO = 'L' ),'995000'))  as ODESC,DATE_DUE from V_JOB_OPERATIONS AS A WHERE LMO = 'L' AND FLAG_CLOSED <> 'Y' AND SEQ < '995000' and date_due <= '{0}'",v.Local.dDate.PervasiveDate,v.Local.sSql )
+f.Intrinsic.Control.If(v.Global.sXPType,=,"D")
+	f.Intrinsic.String.Build("SELECT JOB, SUFFIX, SEQ,JOB + SUFFIX as JS, JOB + SUFFIX + SEQ AS JSS,RTRIM(' ') as PART, RTRIM(' ') AS UNITS, RTRIM(' ') AS PART_ID,(SELECT TOP 1 DESCRIPTION FROM V_JOB_OPERATIONS WHERE JOB = A.JOB AND SUFFIX = A.SUFFIX AND LMO = 'C' AND SEQ > A.SEQ AND SEQ < ISNULL((SELECT TOP 1 SEQ FROM V_JOB_OPERATIONS WHERE JOB = A.JOB AND SUFFIX = A.SUFFIX AND SEQ > A.SEQ AND SEQ < '995000' AND LMO = 'L' ),'995000'))  as ODESC,DATE_DUE from V_JOB_OPERATIONS AS A WHERE LMO = 'L' AND FLAG_CLOSED <> 'Y' AND SEQ < '995000' and date_due <= '{0}'",v.Local.dDate.PervasiveDate,v.Local.sSql )
+f.Intrinsic.Control.ElseIf(v.Global.sXPType,=,"J")
+	f.Intrinsic.Control.If(v.Screen.fXp2Boost!txtWO.Text.trim,=,"")
+		f.Intrinsic.UI.Msgbox("You have to select a Work Order to Export!!!")
+		gui.fXp2Boost..Enabled(False)
+		f.Intrinsic.Control.ExitSub
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.String.Split(v.Screen.fXp2Boost!txtWO.Text,"-",v.Local.sWOW)
+	v.Local.sJobW.set(v.Local.sWOW(0))
+	v.Local.sSuffixW.set(v.Local.sWOW(1))
+	v.Local.sSeqW.set(v.Local.sWOW(2))
+	v.Local.sWOW.Redim(0,0)
+	f.Intrinsic.String.Build("SELECT JOB, SUFFIX, SEQ,JOB + SUFFIX as JS, JOB + SUFFIX + SEQ AS JSS,RTRIM(' ') as PART, RTRIM(' ') AS UNITS, RTRIM(' ') AS PART_ID,(SELECT TOP 1 DESCRIPTION FROM V_JOB_OPERATIONS WHERE JOB = A.JOB AND SUFFIX = A.SUFFIX AND LMO = 'C' AND SEQ > A.SEQ AND SEQ < ISNULL((SELECT TOP 1 SEQ FROM V_JOB_OPERATIONS WHERE JOB = A.JOB AND SUFFIX = A.SUFFIX AND SEQ > A.SEQ AND SEQ < '995000' AND LMO = 'L' ),'995000'))  as ODESC,DATE_DUE from V_JOB_OPERATIONS AS A WHERE LMO = 'L' AND FLAG_CLOSED <> 'Y' AND SEQ < '995000' and Job = '{0}' and Suffix = '{1}' and SEQ = '{2}'",v.Local.sJobW,v.Local.sSuffixW,v.Local.sSeqW,v.Local.sSql)
+f.Intrinsic.Control.EndIf
+
+
+F.data.DataTable.CreateFromSQL("UBDet","conx",v.Local.sSql)
+f.Data.Dictionary.CreateFromSQL("MachDict","conx","Select distinct JSS,SAR FROM APSV3_UBDetail where SAR in (select Machine from Workcenters where Nesting_Intrfc = 'Y')")
+'f.Data.Dictionary.CreateFromSQL("MachDict","conx","Select distinct JSS,SAR FROM APSV3_UBDetail where SAR in (select Machine from Workcenters)")
+F.DATA.Dictionary.SetDefaultReturn("MachDict","")
+f.Data.DataTable.FillFromDictionary("UBDet","MachDict","JSS","PART")
+
+
+f.Data.DataView.Create("UBDet","UBDetVw",22,"PART <> ''","")
+
+f.Data.DataView.ToDataTable("UBDet","UBDetVw","UBDetAct")
+f.Data.Dataview.Close("UBDet","UBDetVw")
+f.Data.DataTable.Close("UBDet")
+
+
+
+f.Data.DataTable.AddColumn("UBDetAct","FlagHld","String")
+
+'create dictionary with job and Suffix as key and Flag_hold as value
+f.Data.Dictionary.CreateFromSQL("FlgChk","conx","Select concat(Job,suffix) as JS,FLAG_HOLD from v_JOB_HEADER WHERE DATE_CLOSED = '1900-01-01'")
+f.Data.Dictionary.SetDefaultReturn("FlgChk","N")
+'fill datatable from dictionary
+f.Data.DataTable.FillFromDictionary("UBDetAct","FlgChk","JS","FlagHld")
+
+
+f.Data.DataView.Create("UBDetAct","UBDetVw",22,"FlagHld <> 'Y'","")
+
+f.Data.DataView.ToDataTable("UBDetAct","UBDetVw","UBDet")
+F.Data.DataView.Close("UBDetAct","UBDetVw")
+F.Data.DataTable.Close("UBDetAct")
+
+f.Intrinsic.Control.For(v.Local.iCount,0,v.DataTable.UBDet.RowCount--,1)
+	f.Intrinsic.String.Build("Select top 1 HOURS_ESTIMATED,part from v_job_operations where job = '{0}' and suffix = '{1}' and seq < '{2}' and LMO = 'M' order by seq desc",v.DataTable.UBDet(v.Local.icount).job!fieldVal,v.DataTable.UBDet(v.Local.icount).suffix!fieldVal,v.DataTable.UBDet(v.Local.icount).Seq!fieldVal,v.Local.sSQL)
+	
+	f.ODBC.Connection!conx.executeandreturn(v.Local.sSQL,v.Local.sMSEQDET)
+	f.Intrinsic.String.Split(v.Local.sMSEQDET,"*!*",v.Local.sMSEQDET)
+	f.Intrinsic.Control.If(v.local.sMSEQDET.UBound,>,0)	
+		f.Data.DataTable.SetValue("UBDet",v.Local.iCount,"UNITS",v.Local.sMSEQDET(0))
+		f.Data.DataTable.SetValue("UBDet",v.Local.iCount,"PART_ID",v.Local.sMSEQDET(1))
+	f.Intrinsic.Control.EndIf
+
+	v.Local.sMSEQDET.Redim(0,0)
+f.Intrinsic.Control.Next(v.Local.iCount)
+
+
+f.Data.Dictionary.CreateFromSQL("InvDict","conx","select RTRIM(PART) as Part, QTY_ONHAND from V_INVENTORY_MSTR order by PART")
+
+f.Data.DataTable.AddColumn("UBDet","INVCHECK","string")
+
+f.Intrinsic.Control.For(v.Local.iCount,v.DataTable.UBDet.RowCount--,0,-1)
+'	f.Intrinsic.String.Build("PART='{0}'",v.DataTable.UBDet(v.Local.iCount).PART_ID!fieldval,v.Local.sFilter)
+'	F.Data.DataTable.Compute("InvDt","QTY_ONHAND",v.Local.sFilter,v.Local.fUnits)
+
+	f.Intrinsic.Control.If(v.DataTable.UBDet(v.Local.iCount).PART_ID!fieldvaltrim,=,"")
+'		f.Data.DataTable.DeleteRow("UBDet",v.Local.iCount)
+		f.Data.DataTable.SetValue("UBDet",v.Local.iCount,"INVCHECK","Y")
+		f.Intrinsic.Control.GoTo("SkipInvCheck")
+	f.Intrinsic.Control.EndIf
+	
+	
+	f.intrinsic.Math.Sub(v.dictionary.Invdict![v.DataTable.UBDet(v.Local.iCount).PART_ID!fieldvalTrim],v.DataTable.UBDet(v.Local.iCount).UNITS!fieldval,V.Local.fUnits)
+	f.Intrinsic.Control.if(v.Local.fUnits,<,0)
+'		f.Data.DataTable.DeleteRow("UBDet",v.Local.iCount)
+		f.Data.DataTable.SetValue("UBDet",v.Local.iCount,"INVCHECK","Y")
+
+	f.Intrinsic.Control.Else
+		f.Data.Dictionary.UpdateItem("InvDict",v.DataTable.UBDet(v.Local.iCount).PART_ID!fieldvalTrim,v.Local.fUnits)
+		f.Data.DataTable.SetValue("UBDet",v.Local.iCount,"INVCHECK","N")
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Label("SkipInvCheck")
+f.Intrinsic.Control.Next(v.Local.iCount)
+f.Data.DataView.Create("UBDet","UBDetVw",22,"INVCHECK = 'N'","")
+f.Data.DataView.ToDataTable("UBDet","UBDetVw","APSDT")
+
+
+F.Data.DataView.Close("UBDet","UBDetVw")
+F.Data.DataTable.Close("UBDet")
+
+f.Data.DataView.Create("APSDT","tempVw",22)
+f.Data.DataView.ToDataTable("APSDT","tempVw","UBDet")
+f.Data.DataView.Close("APSDT","tempVw")
+
+
+f.Data.DataTable.RemoveColumn("APSDT","JS")
+
+
+f.Data.DataTable.RemoveColumn("APSDT","UNITS")
+
+f.Data.DataTable.RemoveColumn("APSDT","DATE_DUE")
+f.Data.DataTable.RemoveColumn("APSDT","ODESC")
+f.Data.DataTable.RemoveColumn("APSDT","JSS")
+f.Data.DataTable.RemoveColumn("APSDT","INVCHECK")
+f.Data.DataTable.RemoveColumn("APSDT","PART_ID")
+f.Data.DataTable.RemoveColumn("APSDT","FlagHld")
+
+f.data.DataTable.SaveToDB("APSDT","conx","JOB_OPERATIONS","JOB*!*SUFFIX*!*SEQ",256)
+
+
+
+f.Data.DataTable.CreateFromSQL("JobHd","conx","select JOB + SUFFIX AS JS, Description, Sales_Order, Sales_Order_Line, Customer_PO, Customer, Part,Router, Priority, Qty_Order,DRAWING_CUSTOMER from v_Job_Header")
+
+f.Data.DataTable.AddColumn("UBDet","Description","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Description")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Description")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","Sales_Order","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Sales_Order")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Sales_Order")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","Sales_Order_Line","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Sales_Order_Line")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Sales_Order_Line")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","Customer_PO","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Customer_PO")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Customer_PO")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","Customer","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Customer")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Customer")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","Name_customer","String")
+f.Data.Dictionary.CreateFromSQL("tempdict","Conx","Select Customer, Name_customer from V_CUSTOMER_MASTER")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","Customer", "Name_customer")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","PartAct","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Part")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "PartAct")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","Priority","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Priority")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Priority")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","Qty_Order","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Qty_Order")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Qty_Order")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","DRAWING_CUSTOMER","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "DRAWING_CUSTOMER")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "DRAWING_CUSTOMER")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","router","String")
+f.Data.Dictionary.createfromdatatable("tempdict","JobHd","JS", "Router")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","JS", "Router")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.AddColumn("UBDet","AltDesc","String")
+f.Data.Dictionary.CreateFromSQL("tempdict","conx","SELECT PART,DESCRIPTION_3 FROM V_INVENTORY_MST2")
+f.Data.Dictionary.SetDefaultReturn("tempdict","")
+f.Data.DataTable.FillFromDictionary("UBDet","tempdict","PART_ID", "AltDesc")
+f.Data.Dictionary.Close("tempdict")
+
+f.Data.DataTable.CreateFromSQL("TempDT","conx","SELECT ROUTER, SORT_1,SORT_2 FROM V_ROUTER_HEADER")
+
+f.Data.Dictionary.createfromdatatable("Us1Dict","TempDT","ROUTER", "SORT_1")
+f.Data.Dictionary.SetDefaultReturn("Us1Dict","")
+f.Data.DataTable.AddColumn("UBDet","User1","String")
+f.Data.DataTable.AddColumn("UBDet","CadFileName","String")
+f.Data.datatable.FillFromDictionary("UBDet","Us1Dict","ROUTER","User1")
+f.Data.Dictionary.Close("Us1Dict")
+
+f.Data.Dictionary.createfromdatatable("Us2Dict","TempDT","ROUTER", "SORT_2")
+f.Data.Dictionary.SetDefaultReturn("Us2Dict","")
+f.Data.DataTable.AddColumn("UBDet","User2","String")
+f.Data.datatable.FillFromDictionary("UBDet","Us2Dict","ROUTER","User2")
+f.Data.Dictionary.Close("Us2Dict")
+
+f.Data.DataTable.Close("TempDT")
+
+
+'f.Data.Dictionary.CreateFromSQL("Us1Dict","conx","SELECT JOB + SUFFIX AS JS, USER_1 FROM V_WO_USER_FLDS")
+'f.Data.Dictionary.SetDefaultReturn("Us1Dict","")
+'f.Data.DataTable.AddColumn("UBDet","User1","String")
+'f.Data.DataTable.AddColumn("UBDet","CadFileName","String")
+'f.Data.datatable.FillFromDictionary("UBDet","Us1Dict","JS","User1")
+'f.Data.Dictionary.Close("Us1Dict")
+
+'f.Data.Dictionary.CreateFromSQL("Us2Dict","conx","SELECT JOB + SUFFIX AS JS, USER_2 FROM V_WO_USER_FLDS")
+'f.Data.Dictionary.SetDefaultReturn("Us2Dict","")
+'f.Data.DataTable.AddColumn("UBDet","User2","String")
+'f.Data.datatable.FillFromDictionary("UBDet","Us2Dict","JS","User2")
+'f.Data.Dictionary.Close("Us2Dict")
+
+
+
+
+
+f.Intrinsic.UI.CloseWaitDialog
+f.intrinsic.UI.InvokeWaitDialog("Generating XML","Export 2 XML for BOOST")
+' create the document
+F.global.xml.createDocument("xmlDoc",False,True,False,False)
+'Dropped Y from Root per Jones Metal.
+F.global.xml.SetRoot("xmlDoc","PPSImport")
+''F.global.xml.SetRoot("xmlDoc","PPSYimport")
+
+F.Global.XML.CreateAttributeNode("xmlDoc","Version","1.1")
+F.Global.XML.SetAttributeToRoot("xmlDoc","Version")
+
+' set new line text
+F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+'Dropped Y from Root per Jones Metal.
+F.global.xml.AppendTextNode("xmlDoc","Root",V.Local.shold)
+'F.global.xml.appendNode("xmlDoc","PPSYimport",V.Local.shold)
+F.Global.XML.CreateElementNode("xmlDoc","ProductionOrders","")
+F.Global.XML.AppendNodeToRoot("xmlDoc","ProductionOrders")
+
+
+f.Intrinsic.Control.for(v.Local.iCount,0,v.DataTable.UBDet.RowCount--,1)
+	v.local.sGMT.Set(v.DataTable.UBDet(v.Local.iCount).User1!fieldval)
+	v.local.sCustom.Set(v.DataTable.UBDet(v.Local.iCount).User2!fieldvaltrim)
+	v.Local.sPart.Set(v.DataTable.UBDet(v.Local.iCount).PartAct!fieldval)
+	
+	v.Local.sDrawing.Set(v.DataTable.UBDet(v.Local.iCount).DRAWING_CUSTOMER!fieldval)
+	v.Local.sCustName.Set(v.DataTable.UBDet(v.Local.iCount).Name_customer!fieldvaltrim)
+	v.Local.sCustNo.Set(v.DataTable.UBDet(v.Local.iCount).Customer!fieldvaltrim)
+	v.Local.sComment.Set(v.DataTable.UBDet(v.Local.iCount).ODESC!fieldvalTrim)
+	v.Local.sDesc.Set(v.DataTable.UBDet(v.Local.iCount).AltDesc!fieldval)
+	v.Local.sPartID.Set(v.DataTable.UBDet(v.Local.iCount).PART_ID!fieldval)
+	v.Local.sJob.Set(v.DataTable.UBDet(v.Local.iCount).JOB!fieldval)
+	v.Local.sSuffix.Set(v.DataTable.UBDet(v.Local.iCount).SUFFIX!fieldval)
+	v.Local.sSeq.Set(v.DataTable.UBDet(v.Local.iCount).SEQ!fieldval)
+	v.Local.sPriority.Set(v.DataTable.UBDet(v.Local.iCount).priority!fieldval)
+	v.Local.sDueDate.Set(v.DataTable.UBDet(v.Local.iCount).Date_Due!fieldval)
+	v.Local.sActDesc.Set(v.DataTable.UBDet(v.Local.iCount).Description!fieldval)
+	v.Local.sCount.Set(v.DataTable.UBDet(v.Local.iCount).Qty_Order!fieldval)
+	
+	
+	F.Intrinsic.Control.If(V.Local.sSuffix.Trim,<>,"")
+		F.Intrinsic.String.Build("{0}-{1}-{2}",V.Local.sJob,V.Local.sSuffix,V.Local.sSeq,V.Local.sWO)
+	F.Intrinsic.Control.Else
+'		V.Local.sWO.Set(V.Local.sJob)
+		F.Intrinsic.String.Build("{0}-   -{1}",V.Local.sJob,V.Local.sSeq,V.Local.sWO)
+	F.Intrinsic.Control.EndIf
+	
+'commenting out GMT file check as Randy said they only need GEO files irrespective of the fact.
+	
+'	F.Intrinsic.Control.If(V.Local.sGMT.Trim,<>,"")
+'		'check added to account for custom jobs which are redirected to a folder with the customer number as a name of the folder
+'		f.Intrinsic.Control.If(v.Local.sCustom.UCase,=,"C")
+'			F.Intrinsic.String.RPad(v.Local.sPart.Trim," ",20,V.Local.sRev)
+'			V.Local.sRev.Set(V.Local.sRev.Right3)
+'			F.Intrinsic.Control.If(V.Local.sRev.Trim,<>,"")
+'				F.Intrinsic.String.Build("{0}_{1}",V.Local.sGMT.Trim,V.Local.sRev.Trim,V.Local.sFileCad)
+'				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\{1}.GMT",v.Local.sCustNo.Trim,V.Local.sFileCad.Trim,V.Local.sCADFileName)
+'			F.Intrinsic.Control.Else
+'				'Final File name
+'				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\{1}.GMT",v.Local.sCustNo.Trim,,V.Local.sGMT.Trim,V.Local.sCADFileName)
+'			F.Intrinsic.Control.EndIf
+'		f.Intrinsic.Control.Else
+'			F.Intrinsic.String.Mid(V.Local.sGMT.Trim,2,2,V.Local.sCADRet)
+'			F.Intrinsic.Control.If(V.Local.sCADRet.Long,>,90)
+'				'Folders from 2000s
+'				F.intrinsic.string.build("19{0}",V.local.scadret.trim,V.local.sCadRet)
+'			F.Intrinsic.Control.Else
+'				'Folders from 1990s
+'				F.intrinsic.string.build("20{0}",V.local.scadret.trim,V.local.sCadRet)
+'			F.Intrinsic.Control.EndIf
+'			'3/11/16 sas - per Russ he wants _Rev to be added to the end of the file name before the .GEO if the part has a revision. If the part doesn't have  a revision then don't even put _
+'			F.Intrinsic.String.RPad(v.Local.sPart.Trim," ",20,V.Local.sRev)
+'			V.Local.sRev.Set(V.Local.sRev.Right3)
+'			F.Intrinsic.Control.If(V.Local.sRev.Trim,<>,"")
+'				F.Intrinsic.String.Build("{0}_{1}",V.Local.sGMT.Trim,V.Local.sRev.Trim,V.Local.sFileCad)
+'				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\geo\{1}.GMT",V.Local.sCADRet,V.Local.sFileCad.Trim,V.Local.sCADFileName)
+'			F.Intrinsic.Control.Else
+'				'Final File name
+'				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\geo\{1}.GMT",V.Local.sCADRet,V.Local.sGMT.Trim,V.Local.sCADFileName)
+'			F.Intrinsic.Control.EndIf
+'		f.Intrinsic.Control.EndIf
+'	F.Intrinsic.Control.ElseIf(V.Local.sDrawing.Trim,<>,"")
+	F.Intrinsic.Control.If(V.Local.sDrawing.Trim,<>,"")
+		'check added to account for custom jobs which are redirected to a folder with the customer number as a name of the folder
+		f.Intrinsic.Control.If(v.Local.sCustom.UCase,=,"C")
+			F.Intrinsic.String.RPad(V.Local.sPart.Trim," ",20,V.Local.sRev)
+			V.Local.sRev.Set(V.Local.sRev.Right3)
+			F.Intrinsic.Control.If(V.Local.sRev.Trim,<>,"")
+				F.Intrinsic.String.Build("{0}_{1}",V.Local.sDrawing.Trim,V.Local.sRev.Trim,V.Local.sFileCad)
+				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\{1}.GEO",v.Local.sCustNo.Trim,V.Local.sFileCad.Trim,V.Local.sCADFileName)
+			F.Intrinsic.Control.Else
+				'Final File name
+				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\{1}.GEO",v.Local.sCustNo.Trim,V.Local.sDrawing.Trim,V.Local.sCADFileName)
+			F.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.Else
+			F.Intrinsic.String.Mid(V.Local.sDrawing.Trim,2,2,V.Local.sCADRet)
+			F.Intrinsic.Control.If(V.Local.sCADRet.Long,>,90)
+				'Folders from 2000s
+				F.intrinsic.string.build("19{0}",V.local.scadret.trim,V.local.sCadRet)
+			F.Intrinsic.Control.Else
+				'Folders from 1990s
+				F.intrinsic.string.build("20{0}",V.local.scadret.trim,V.local.sCadRet)
+			F.Intrinsic.Control.EndIf
+			'3/11/16 sas - per Russ he wants _Rev to be added to the end of the file name before the .GEO if the part has a revision. If the part doesn't have  a revision then don't even put _
+			'he also wants
+			F.Intrinsic.String.RPad(V.Local.sPart.Trim," ",20,V.Local.sRev)
+			V.Local.sRev.Set(V.Local.sRev.Right3)
+			F.Intrinsic.Control.If(V.Local.sRev.Trim,<>,"")
+				F.Intrinsic.String.Build("{0}_{1}",V.Local.sDrawing.Trim,V.Local.sRev.Trim,V.Local.sFileCad)
+				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\geo\{1}.GEO",V.Local.sCADRet,V.Local.sFileCad.Trim,V.Local.sCADFileName)
+			F.Intrinsic.Control.Else
+				'Final File name
+				F.Intrinsic.String.Build("\\filesrvr\programming\tops100\{0}\geo\{1}.GEO",V.Local.sCADRet,V.Local.sDrawing.Trim,V.Local.sCADFileName)
+			F.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		V.Local.sCADFileName.Set("")
+	F.Intrinsic.Control.EndIf
+	f.Data.DataTable.SetValue("UBDet",v.Local.iCount,"CadFileName",v.Local.sCADFileName)
+	v.Local.sComments.Set(v.Local.sComment)
+	F.Intrinsic.Control.If(V.Local.sComment.Length,>,255)
+		F.Intrinsic.String.Build("{0}+",V.Local.sComment.Left254,V.Local.sComment)
+	F.Intrinsic.Control.EndIf
+	f.Data.DataTable.SetValue("UBDet",v.Local.iCount,"ODESC",v.Local.sComment)
+	
+	F.Intrinsic.String.IsInString(V.Local.sComments,"NITRO",True,V.Local.bExists)
+			'If we find NITRO then we add -N to the end else we don't
+	F.Intrinsic.Control.If(V.Local.bExists,=,True)
+		F.Intrinsic.String.Build("{0} {1}-N",V.Local.sPartID.Trim,V.Local.sDesc.Trim,V.Local.sDesc)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("{0} {1}",V.Local.sPartID.Trim,V.Local.sDesc.Trim,V.Local.sDesc)
+	F.Intrinsic.Control.EndIf
+	
+	' ======================== PRODUCTION ORDER
+			f.Intrinsic.String.Build("{0}{1}{1}",V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrders",V.Local.shold)
+			f.Intrinsic.String.Build("{0}{1}{1}{1}",V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+			' create ProductionOrder node, with attribute
+			F.Global.XML.CreateElementNode("xmlDoc","ProductionOrder","")
+			F.Global.XML.CreateAttributeNode("xmlDoc","OrderNo",V.Local.sWO)
+			F.Global.XML.SetAttributeToNode("xmlDoc","ProductionOrder","OrderNo")
+			F.Global.XML.DestroyNode("xmlDoc","OrderNo")
+			F.global.xml.AppendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrders","ProductionOrder")
+			
+			
+			' Description
+			'Now we are going to get the Job Lasor comments
+			F.Global.XML.CreateElementNode("xmlDoc","Description",V.Local.sComment.Trim)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","Description")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","Description")
+			
+			' Sales Order
+			F.Global.XML.CreateElementNode("xmlDoc","CustomerOrderNo",V.Local.sDesc.Trim)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","CustomerOrderNo")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","CustomerOrderNo")
+			
+			' Customer Name
+			F.Global.XML.CreateElementNode("xmlDoc","CustomerName",v.Local.sCustName)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","CustomerName")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","CustomerName")
+			' Customer No
+			F.Global.XML.CreateElementNode("xmlDoc","CustomerNo",v.Local.sCustNo)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","CustomerNo")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","CustomerNo")
+			' Part
+			f.Intrinsic.String.Right(v.Local.sPart,3,v.Local.sRev)
+			f.Intrinsic.String.Left(v.Local.sPart,17,v.Local.sPartNoRev)
+			f.Intrinsic.Control.If(v.local.sRev.Trim,<>,"")
+				f.Intrinsic.String.build("{0}_{1}",v.Local.sPartNoRev.Trim,v.Local.sRev.trim,v.Local.sPart)
+			f.Intrinsic.Control.EndIf
+			F.Global.XML.CreateElementNode("xmlDoc","PartNo",v.Local.sPart.Trim)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","PartNo")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","PartNo")
+			
+			' Priority
+			F.Global.XML.CreateElementNode("xmlDoc","Priority",v.Local.sPriority.Trim)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","Priority")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","Priority")
+			' DueDate
+			F.Intrinsic.String.Split(V.Local.sDueDate,"/",V.Local.sDateHold)
+			V.Local.sDateHold.RedimPreserve(0,2)
+			F.Intrinsic.String.Build("{0}/{1}/{2}",V.Local.sDateHold(1).Trim,V.Local.sDateHold(0).Trim,V.Local.sDateHold(2).Trim,V.Local.sDueDate)
+			F.Global.XML.CreateElementNode("xmlDoc","DueDate",v.Local.sDueDate)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","DueDate")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","DueDate")
+			
+			
+			' CAD File
+			F.Global.XML.CreateElementNode("xmlDoc","CADFilename",V.Local.sCADFileName)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","CADFilename")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","CADFilename")
+			' Part Description
+			F.Intrinsic.Control.CallSub(Filecharacter,"VAL",v.Local.sActDesc.Trim)
+			F.Global.XML.CreateElementNode("xmlDoc","PartDescription",V.Args.VAL)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","PartDescription")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","PartDescription")
+			' Qty
+			F.Global.XML.CreateElementNode("xmlDoc","DesiredQuantity",v.Local.sCount)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","DesiredQuantity")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","DesiredQuantity")
+			
+			' Material
+			F.Global.XML.CreateElementNode("xmlDoc","Material",V.Local.sPartID.Trim)
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","Material")
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","Material")
+			
+			' Status
+			'Per Jones metal ElementNode for Status should be 30
+			'changign the status to 10 so that it doesn't get sent to processing
+			F.Global.XML.CreateElementNode("xmlDoc","Status","30")
+
+			F.Global.XML.AppendNode("xmlDoc","ProductionOrder","Status")
+			f.Intrinsic.String.Build("{0}{1}{1}",V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+			F.global.xml.appendTextNode("xmlDoc","ProductionOrder",V.Local.shold)
+			F.Global.XML.DestroyNode("xmlDoc","Status")
+			
+			F.Global.XML.DestroyNode("xmlDoc","ProductionOrder")
+
+
+
+f.Intrinsic.Control.Next(v.Local.iCount)
+f.Intrinsic.String.Build("{0}{1}",V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+F.global.xml.appendTextNode("xmlDoc","ProductionOrders",V.Local.shold)
+f.Intrinsic.String.Build("{0}",V.Ambient.NewLine,V.Ambient.Tab,V.Local.shold)
+
+
+F.Global.XML.DestroyNode("xmlDoc","ProductionOrders")
+F.global.xml.appendTextNode("xmlDoc","Root",V.Local.shold)
+F.Global.XML.AppendNodeToRoot("xmlDoc","ProductionOrders")
+f.Intrinsic.UI.CloseWaitDialog
+f.intrinsic.UI.InvokeWaitDialog("Copying to Export Directory","Export 2 XML for BOOST")
+f.Intrinsic.String.Build("{0}\BOOST",v.Caller.GlobalDir,v.Local.sOutFile)
+f.Intrinsic.File.DirExists(v.Local.sOutFile,v.Local.bCheck)
+
+f.Intrinsic.Control.If(v.Local.bCheck,=,false)
+	f.Intrinsic.File.CreateDir(v.Local.sOutFile)
+	f.Intrinsic.String.Build("{0}\BOOST\TO_BOOST",v.Caller.GlobalDir,v.Local.sOutFile)
+	f.Intrinsic.File.CreateDir(v.Local.sOutFile)
+	f.Intrinsic.Control.GoTo("Skip")
+f.Intrinsic.Control.Endif
+
+f.Intrinsic.String.Build("{0}\BOOST\TO_BOOST",v.Caller.GlobalDir,v.Local.sOutFile)
+f.Intrinsic.File.DirExists(v.Local.sOutFile,v.Local.bCheck)
+f.Intrinsic.Control.If(v.Local.bCheck,=,false)
+	f.Intrinsic.File.CreateDir(v.Local.sOutFile)
+f.Intrinsic.Control.Endif
+
+f.Intrinsic.Control.Label("Skip")
+
+
+F.global.xml.saveDocument("xmlDoc",v.Local.sOutFile,ProdOrderImp.xml)
+'F.global.xml.CloseDocument("xmlDoc")
+
+
+'save datatable to Job Operations DB 
+
+
+f.Data.Dictionary.Close("FlgChk")
+f.Intrinsic.UI.CloseWaitDialog
+f.Intrinsic.UI.Msgbox("Export Successful")
+gui.fXp2Boost..Enabled(True)
+
+f.Intrinsic.Control.CallSub(Unload)
+Program.Sub.cmdRunXp_Click.End
+
+Program.Sub.fileCharacter.Start
+V.Local.sVal.Declare(String)
+
+F.Intrinsic.String.Replace(V.Args.VAL,"&","&amp;",V.Local.sVal)
+F.Intrinsic.String.Replace(V.Local.sVal,"'","&#x27;",V.Local.sVal)
+F.Intrinsic.String.Replace(V.Local.sVal,"<","&lt;",V.Local.sVal)
+F.Intrinsic.String.Replace(V.Local.sVal,">","&gt;",V.Local.sVal)
+F.Intrinsic.String.Replace(V.Local.sVal,V.Ambient.DblQuote,"&quot;",V.Local.sVal)
+
+F.Intrinsic.Variable.AddRV("VAL",V.Local.sVal)
+
+F.Intrinsic.Control.ExitSub
+
+Program.Sub.fileCharacter.End
+
+Program.Sub.Unload.Start
+f.odbc.Connection!Conx.Close
+f.Intrinsic.Control.End
+Program.Sub.Unload.End
+
+Program.Sub.cmdBrWO_Click.Start
+v.Local.sSql.Declare
+v.local.sTitles.Declare
+v.Local.iWidths.Declare
+v.Local.sRet.Declare
+v.Local.sDisp.Declare
+
+'create browser
+v.Local.sSql.Set("select Job, Suffix, Seq,Description from V_JOB_Operations where flag_closed <> 'Y' and LMO = 'L' and SEQ < '995000' ")
+F.Intrinsic.String.Split("Job*!*Suffix*!*Seq*!*Description","*!*",V.Local.sTitles)
+F.Intrinsic.String.Split("300*!*300*!*300*!*600","*!*",V.Local.iWidths)
+F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+f.Intrinsic.UI.Browser("Select Labor Sequence","Conx",V.Local.sSql,V.Local.sTitles,V.Local.iWidths,V.Local.sRet)
+
+'handle return
+F.Intrinsic.Control.If(V.Local.sRet,=,"***CANCEL***")
+	f.Intrinsic.Control.ExitSub
+f.Intrinsic.Control.else
+	f.Intrinsic.String.Split(v.Local.sRet,"*!*",v.local.sRet)
+	
+	f.Intrinsic.String.Build("{0}-{1}-{2}",v.Local.sRet(0),v.Local.sRet(1),v.Local.sRet(2),v.Local.sDisp)
+	
+	gui.fXp2Boost.txtWO.Text(v.Local.sDisp)
+	
+
+
+f.Intrinsic.Control.EndIf
+
+Program.Sub.cmdBrWO_Click.End
+
+Program.Sub.optByDate_Click.Start
+gui.fXp2Boost.dtpCutOff.Visible(True)
+gui.fXp2Boost.dtpCutOff.Enabled(True)
+gui.fXp2Boost.txtWO.Visible(False)
+gui.fXp2Boost.txtWO.Enabled(False)
+gui.fXp2Boost.cmdBrWO.Visible(False)
+gui.fXp2Boost.cmdBrWO.Enabled(False)
+v.global.sXPType.Set("D")
+Program.Sub.optByDate_Click.End
+
+Program.Sub.optByWO_Click.Start
+gui.fXp2Boost.dtpCutOff.Visible(False)
+gui.fXp2Boost.dtpCutOff.Enabled(False)
+gui.fXp2Boost.txtWO.Visible(True)
+gui.fXp2Boost.txtWO.Enabled(True)
+gui.fXp2Boost.cmdBrWO.Visible(True)
+gui.fXp2Boost.cmdBrWO.Enabled(True)
+v.global.sXPType.Set("J")
+Program.Sub.optByWO_Click.End
